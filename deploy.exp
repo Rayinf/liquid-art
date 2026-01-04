@@ -1,0 +1,58 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+set password "Aa80231314."
+set host "111.228.29.12"
+set user "root"
+
+# 1. Upload the tarball
+puts "\n>>> Uploading build archive..."
+spawn scp liquid-art.tar.gz $user@$host:/tmp/
+expect {
+    "*yes/no*" { send "yes\r"; exp_continue }
+    "*password:*" { send "$password\r" }
+}
+expect eof
+
+# 2. Extract and Configure on Server
+puts "\n>>> Configuring server..."
+spawn ssh $user@$host
+expect {
+    "*password:*" { send "$password\r" }
+}
+
+expect "*#*"
+send "mkdir -p /var/www/liquid-art\r"
+expect "*#*"
+send "rm -rf /var/www/liquid-art/*\r"
+expect "*#*"
+send "tar -xzf /tmp/liquid-art.tar.gz -C /var/www/liquid-art --strip-components=1\r"
+expect "*#*"
+
+# Create Nginx config in conf.d using quoted EOF to prevent $uri expansion
+send "cat <<'EOF' > /etc/nginx/conf.d/liquid-art.conf
+server {
+    listen 80;
+    server_name 111.228.29.12;
+    root /var/www/liquid-art;
+    index index.html;
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+}
+EOF\r"
+expect "*#*"
+
+# Backup conflicting captain.conf if it exists
+send "if \[ -f /etc/nginx/conf.d/captain.conf \]; then mv /etc/nginx/conf.d/captain.conf /etc/nginx/conf.d/captain.conf.bak; fi\r"
+expect "*#*"
+
+# Restart Nginx
+send "nginx -t && systemctl restart nginx\r"
+expect "*#*"
+
+send "exit\r"
+expect eof
+
+puts "\n>>> Deployment successful!"

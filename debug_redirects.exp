@@ -1,0 +1,16 @@
+#!/usr/bin/expect -f
+set timeout -1
+spawn ssh root@111.228.29.12
+expect "*password:*"
+send "Aa80231314.\r"
+expect "*#*"
+send "nginx -T\r"
+expect "*#*"
+send "tail -n 50 /var/log/nginx/error.log\r"
+expect "*#*"
+send "tail -n 50 /var/log/nginx/access.log\r"
+expect "*#*"
+send "ls -la /etc/nginx/conf.d/\r"
+expect "*#*"
+send "exit\r"
+expect eof
