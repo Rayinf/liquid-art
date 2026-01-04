@@ -1,7 +1,7 @@
 # 🍸 Liquid Art: The AI Mixology Laboratory / AI 调酒实验室 👾
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Gemini](https://img.shields.io/badge/AI-Gemini%202.0-blue)](https://deepmind.google/technologies/gemini/)
+[![Gemini](https://img.shields.io/badge/AI-Gemini%203.0-blue)](https://deepmind.google/technologies/gemini/)
 [![Pixel Art](https://img.shields.io/badge/Style-Retro%20Pixel-orange)](https://en.wikipedia.org/wiki/Pixel_art)
 
 [English](#english) | [中文](#chinese)
