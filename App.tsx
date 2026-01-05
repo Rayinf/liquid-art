@@ -8,7 +8,9 @@ import Timeline from './components/Timeline';
 import DrinkResult from './components/DrinkResult';
 import GlassSimOverlay from './components/GlassSimOverlay';
 import { analyzeCustomDrink, generateDrinkImage, generateDrinkRecipe, setApiKey } from './services/geminiService';
-import { ChevronLeft, Key, Settings, X } from 'lucide-react';
+import { ChevronLeft, Key, Settings, X, Beaker, Package } from 'lucide-react';
+
+type MobileTab = 'simulator' | 'workbench';
 
 enum AppMode {
   DIY = 'diy',
@@ -39,6 +41,9 @@ function App() {
   const [apiKeyInput, setApiKeyInput] = useState(localStorage.getItem('GEMINI_API_KEY') || '');
   const [isKeySaved, setIsKeySaved] = useState(!!localStorage.getItem('GEMINI_API_KEY'));
   const [showSettings, setShowSettings] = useState(false);
+
+  // Mobile Tab State
+  const [mobileTab, setMobileTab] = useState<MobileTab>('workbench');
 
   // Loading States
   const [analyzing, setAnalyzing] = useState(false);
@@ -465,15 +470,15 @@ function App() {
 
       {mode === AppMode.DIY && (
         <div className="flex-1 flex flex-col overflow-hidden h-full">
-          {/* Retro Header */}
-          <header className="px-6 py-4 bg-black border-b-4 border-black flex justify-between items-center z-30 shadow-[0_4px_0_0_#1a1a1a]">
-            <div className="flex items-center gap-4">
-              <div className="px-2 py-1 bg-brand-gold text-brand-900 text-[12px] animate-pulse">LIVE</div>
-              <h1 className="text-xl tracking-tighter text-white">
-                LIQUID_ART <span className="text-brand-gold opacity-50 font-pixel">V1.1</span>
+          {/* Retro Header - Optimized for mobile */}
+          <header className="px-3 md:px-6 py-3 md:py-4 bg-black border-b-4 border-black flex justify-between items-center z-30 shadow-[0_4px_0_0_#1a1a1a]">
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="px-2 py-1 bg-brand-gold text-brand-900 text-[10px] md:text-[12px] animate-pulse">LIVE</div>
+              <h1 className="text-base md:text-xl tracking-tighter text-white">
+                LIQUID_ART <span className="hidden sm:inline text-brand-gold opacity-50 font-pixel">V1.1</span>
               </h1>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 md:gap-6">
               <div className="hidden md:flex flex-col items-end">
                 <span className="text-[12px] text-slate-500 uppercase">System Status</span>
                 <span className="text-[14px] text-green-500">READY_TO_MIX</span>
@@ -482,42 +487,103 @@ function App() {
                 onClick={() => setShowSettings(true)}
                 className="p-2 border-2 border-slate-800 hover:border-brand-gold transition-colors text-slate-500 hover:text-brand-gold"
               >
-                <Settings size={20} />
+                <Settings size={18} />
               </button>
             </div>
           </header>
 
-          <main className="flex-1 flex flex-col md:flex-row overflow-hidden h-full">
-            <div className="flex-1 flex flex-col relative h-full bg-slate-900 border-r-4 border-black overflow-hidden shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]">
-              {/* Background Decorations */}
-              <GlassSimOverlay />
+          {/* Main Content Area */}
+          <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
 
-              {/* Simulator Area - Now takes full left height */}
-              <div className="absolute inset-0 flex items-center justify-center overflow-hidden z-10">
-                <GlassSimulator drinkState={drinkState} currentAction={currentAction} currentIngredient={currentIngredient} />
+            {/* === MOBILE LAYOUT === */}
+            <div className="flex-1 flex flex-col md:hidden overflow-hidden">
+              {/* Mobile: Simulator View */}
+              {mobileTab === 'simulator' && (
+                <div className="flex-1 flex flex-col relative bg-slate-900 overflow-hidden shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]">
+                  <GlassSimOverlay />
+                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden z-10">
+                    <GlassSimulator drinkState={drinkState} currentAction={currentAction} currentIngredient={currentIngredient} />
+                  </div>
+                  <div className="absolute bottom-[60px] left-0 right-0 z-20">
+                    <Timeline steps={drinkState.steps} />
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile: Workbench View */}
+              {mobileTab === 'workbench' && (
+                <div className="flex-1 overflow-hidden">
+                  <Workbench
+                    drinkState={drinkState}
+                    onAction={handleAction}
+                    onSelectGlass={(g) => setDrinkState(prev => ({ ...prev, glass: g, maxVolume: GLASS_VOLUMES[g] }))}
+                    onFinish={handleManualFinish}
+                    onAIRequest={handleAIRequest}
+                    onUndo={undoStep}
+                    onReset={resetDrink}
+                    loading={analyzing}
+                    aiMode={isAIPlaying}
+                    isAIGenerated={isAIGenerated}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* === DESKTOP LAYOUT (unchanged) === */}
+            <div className="hidden md:flex flex-1 flex-row overflow-hidden h-full">
+              {/* Simulator Area */}
+              <div className="flex-1 flex flex-col relative h-full bg-slate-900 border-r-4 border-black overflow-hidden shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]">
+                <GlassSimOverlay />
+                <div className="absolute inset-0 flex items-center justify-center overflow-hidden z-10">
+                  <GlassSimulator drinkState={drinkState} currentAction={currentAction} currentIngredient={currentIngredient} />
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 z-20">
+                  <Timeline steps={drinkState.steps} />
+                </div>
               </div>
 
-              {/* Timeline Area - Absolute Overlay at bottom of left side */}
-              <div className="absolute bottom-0 left-0 right-0 z-20">
-                <Timeline steps={drinkState.steps} />
+              {/* Controls Area */}
+              <div className="flex-1 h-full z-20 shadow-2xl overflow-y-auto custom-scrollbar">
+                <Workbench
+                  drinkState={drinkState}
+                  onAction={handleAction}
+                  onSelectGlass={(g) => setDrinkState(prev => ({ ...prev, glass: g, maxVolume: GLASS_VOLUMES[g] }))}
+                  onFinish={handleManualFinish}
+                  onAIRequest={handleAIRequest}
+                  onUndo={undoStep}
+                  onReset={resetDrink}
+                  loading={analyzing}
+                  aiMode={isAIPlaying}
+                  isAIGenerated={isAIGenerated}
+                />
               </div>
             </div>
 
-            {/* Controls Area - 1:1 Ratio */}
-            <div className="flex-1 h-full z-20 shadow-2xl overflow-y-auto custom-scrollbar">
-              <Workbench
-                drinkState={drinkState}
-                onAction={handleAction}
-                onSelectGlass={(g) => setDrinkState(prev => ({ ...prev, glass: g, maxVolume: GLASS_VOLUMES[g] }))}
-                onFinish={handleManualFinish}
-                onAIRequest={handleAIRequest}
-                onUndo={undoStep}
-                onReset={resetDrink}
-                loading={analyzing}
-                aiMode={isAIPlaying}
-                isAIGenerated={isAIGenerated}
-              />
-            </div>
+            {/* === MOBILE BOTTOM TAB NAVIGATION === */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black border-t-4 border-slate-800 safe-area-bottom">
+              <div className="flex">
+                <button
+                  onClick={() => setMobileTab('simulator')}
+                  className={`flex-1 flex flex-col items-center gap-1 py-3 px-2 transition-all ${mobileTab === 'simulator'
+                    ? 'text-brand-gold bg-slate-900'
+                    : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                >
+                  <Beaker size={22} />
+                  <span className="text-[10px] font-pixel uppercase">调酒台</span>
+                </button>
+                <button
+                  onClick={() => setMobileTab('workbench')}
+                  className={`flex-1 flex flex-col items-center gap-1 py-3 px-2 transition-all ${mobileTab === 'workbench'
+                    ? 'text-brand-gold bg-slate-900'
+                    : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                >
+                  <Package size={22} />
+                  <span className="text-[10px] font-pixel uppercase">材料库</span>
+                </button>
+              </div>
+            </nav>
           </main>
         </div>
       )}

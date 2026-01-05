@@ -50,7 +50,7 @@ const Workbench: React.FC<WorkbenchProps> = ({ drinkState, onAction, onSelectGla
   };
 
   return (
-    <div className="bg-brand-800/80 border-l border-white/5 backdrop-blur-md flex flex-col h-full w-full shadow-2xl relative z-20">
+    <div className="bg-brand-800/80 border-l border-white/5 md:border-l backdrop-blur-md flex flex-col h-full w-full shadow-2xl relative z-20 pb-[70px] md:pb-0">
 
       {/* Header / AI Button */}
       <div className="p-3 border-b-4 border-black flex justify-between items-center bg-black/60 relative">
@@ -128,7 +128,7 @@ const Workbench: React.FC<WorkbenchProps> = ({ drinkState, onAction, onSelectGla
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 custom-scrollbar bg-pixel-grid">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {filteredInventory.map(ing => (
             <button
               key={ing.id}
@@ -161,7 +161,7 @@ const Workbench: React.FC<WorkbenchProps> = ({ drinkState, onAction, onSelectGla
       </div>
 
       {/* Action Panel */}
-      <div className="p-3 bg-black/80 border-t-4 border-black relative min-h-[140px]">
+      <div className="p-2 md:p-3 bg-black/80 border-t-4 border-black relative min-h-[120px] md:min-h-[140px]">
         {loading || aiMode ? (
           <div className="absolute inset-0 bg-black/90 z-40 flex items-center justify-center flex-col gap-4 scanlines">
             <RotateCw className="animate-spin text-brand-gold" size={32} />
@@ -216,39 +216,39 @@ const Workbench: React.FC<WorkbenchProps> = ({ drinkState, onAction, onSelectGla
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 relative">
+          <div className="grid grid-cols-2 gap-2 md:gap-3 relative">
             <button
               onClick={() => onAction(ActionType.STIR, {})}
               disabled={drinkState.steps.length === 0}
-              className="pixel-button text-[14px] font-pixel py-3 disabled:opacity-30 bg-slate-800 hover:brightness-110 active:translate-y-1 transition-all shadow-[0_4px_0_0_#1a1a1a]"
+              className="pixel-button text-[12px] md:text-[14px] font-pixel py-2 md:py-3 disabled:opacity-30 bg-slate-800 hover:brightness-110 active:translate-y-1 transition-all shadow-[0_4px_0_0_#1a1a1a]"
             >
               STIR
             </button>
             <button
               onClick={() => onAction(ActionType.SHAKE, {})}
               disabled={drinkState.steps.length === 0}
-              className="pixel-button text-[14px] font-pixel py-3 disabled:opacity-30 bg-slate-800 hover:brightness-110 active:translate-y-1 transition-all shadow-[0_4px_0_0_#1a1a1a]"
+              className="pixel-button text-[12px] md:text-[14px] font-pixel py-2 md:py-3 disabled:opacity-30 bg-slate-800 hover:brightness-110 active:translate-y-1 transition-all shadow-[0_4px_0_0_#1a1a1a]"
             >
               SHAKE
             </button>
             <button
               onClick={onUndo}
               disabled={drinkState.steps.length === 0 || aiMode}
-              className="pixel-button bg-slate-900/50 text-[12px] font-pixel py-2 disabled:opacity-30 hover:text-white transition-colors"
+              className="pixel-button bg-slate-900/50 text-[10px] md:text-[12px] font-pixel py-1.5 md:py-2 disabled:opacity-30 hover:text-white transition-colors"
             >
               UNDO
             </button>
             <button
               onClick={onReset}
               disabled={drinkState.steps.length === 0 || aiMode}
-              className="pixel-button bg-slate-900/50 text-[12px] font-pixel py-2 disabled:opacity-30 hover:text-white transition-colors"
+              className="pixel-button bg-slate-900/50 text-[10px] md:text-[12px] font-pixel py-1.5 md:py-2 disabled:opacity-30 hover:text-white transition-colors"
             >
               CLEAR
             </button>
             <button
               onClick={onFinish}
               disabled={drinkState.steps.length === 0 || isAIGenerated || aiMode}
-              className="col-span-2 pixel-button bg-brand-accent text-sm font-pixel py-4 mt-1 shadow-[0_4px_0_0_#4a0000] hover:brightness-110 active:translate-y-1 transition-all relative group overflow-hidden"
+              className="col-span-2 pixel-button bg-brand-accent text-[12px] md:text-sm font-pixel py-2.5 md:py-4 mt-1 shadow-[0_4px_0_0_#4a0000] hover:brightness-110 active:translate-y-1 transition-all relative group overflow-hidden"
             >
               <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <div className="flex items-center justify-center gap-2 relative z-10">

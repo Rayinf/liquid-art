@@ -45,7 +45,7 @@ const DrinkResult: React.FC<DrinkResultProps> = ({ result, imageUrl, onReset }) 
   );
 
   return (
-    <div className="w-full max-w-6xl h-full lg:h-[85vh] grid grid-cols-1 lg:grid-cols-12 animate-[fadeIn_0.5s_ease-out] relative shadow-[0_0_60px_rgba(0,0,0,0.9)] bg-slate-900 self-center overflow-hidden border-4 border-black">
+    <div className="w-full max-w-6xl h-auto md:h-full lg:h-[85vh] grid grid-cols-1 lg:grid-cols-12 animate-[fadeIn_0.5s_ease-out] relative shadow-[0_0_60px_rgba(0,0,0,0.9)] bg-slate-900 self-center overflow-hidden border-4 border-black">
       <DecoCorners />
 
       {/* Retro Header Overlay */}
@@ -74,7 +74,7 @@ const DrinkResult: React.FC<DrinkResultProps> = ({ result, imageUrl, onReset }) 
               <div className="w-10 h-1 bg-brand-gold/60"></div>
               <div className="w-2 h-1 bg-brand-gold animate-pulse"></div>
             </div>
-            <h2 className="text-2xl font-pixel text-brand-gold mb-3 tracking-tighter shadow-black drop-shadow-[2px_2px_0_rgba(0,0,0,1)] uppercase">{result.name}</h2>
+            <h2 className="text-xl md:text-2xl font-pixel text-brand-gold mb-3 tracking-tighter shadow-black drop-shadow-[2px_2px_0_rgba(0,0,0,1)] uppercase">{result.name}</h2>
             <div className="bg-black/90 p-4 border-l-4 border-brand-gold shadow-[4px_4px_0_0_rgba(0,0,0,0.5)]">
               <p className="text-[14px] font-pixel text-slate-300 leading-relaxed line-clamp-3 md:line-clamp-none">
                 {result.description}
@@ -84,7 +84,7 @@ const DrinkResult: React.FC<DrinkResultProps> = ({ result, imageUrl, onReset }) 
         </div>
 
         {/* Scoring Grid */}
-        <div className="p-5 bg-slate-950/80 font-pixel h-48 lg:h-auto shrink-0 border-t-4 border-black">
+        <div className="p-4 md:p-5 bg-slate-950/80 font-pixel h-auto md:h-48 lg:h-auto shrink-0 border-t-4 border-black">
           <h3 className="text-[10px] text-slate-500 mb-3 uppercase tracking-widest flex items-center gap-2">
             <div className="p-0.5 border border-slate-700"><div className="w-1 h-1 bg-brand-gold"></div></div>
             DRINK_EVALUATION
@@ -142,13 +142,13 @@ const DrinkResult: React.FC<DrinkResultProps> = ({ result, imageUrl, onReset }) 
           </div>
 
           {/* Flavor Profile Chart */}
-          <div className="min-h-[260px] w-full relative bg-black/40 p-4 border-2 border-slate-700 shadow-[inset_0_0_20px_rgba(0,0,0,1)]">
+          <div className="min-h-[200px] md:min-h-[260px] w-full relative bg-black/40 p-4 border-2 border-slate-700 shadow-[inset_0_0_20px_rgba(0,0,0,1)]">
             <h3 className="font-pixel text-[12px] text-slate-500 text-center mb-6 uppercase tracking-widest flex items-center justify-center gap-3">
               <div className="w-1.5 h-1.5 bg-slate-700 rotate-45"></div>
               TARGET_ANALYSIS
               <div className="w-1.5 h-1.5 bg-slate-700 rotate-45"></div>
             </h3>
-            <div className="w-full h-[200px]">
+            <div className="w-full h-[160px] md:h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                   <PolarGrid stroke="#334155" />

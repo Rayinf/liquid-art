@@ -119,6 +119,41 @@
       pointer-events: none;
       z-index: 10;
     }
+
+    /* Mobile-specific styles */
+    .safe-area-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* Custom scrollbar for mobile */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(212, 175, 55, 0.4);
+      border-radius: 2px;
+    }
+
+    /* Mobile bottom padding for content */
+    @media (max-width: 767px) {
+      .mobile-bottom-padding {
+        padding-bottom: 70px;
+      }
+    }
+
+    /* Touch-friendly tap targets */
+    @media (max-width: 767px) {
+
+      button,
+      a {
+        min-height: 44px;
+      }
+    }
   </style>
   <script type="importmap">
 {
