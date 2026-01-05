@@ -84,4 +84,35 @@ export interface AIDrinkResult {
     boozy: number;
     salty: number;
   };
+  lore: string;
+  abv?: number;
+  density?: number;
+  temp?: string;
+  userPrompt?: string;
+}
+
+export interface SavedDrink {
+  id: string;
+  timestamp: number;
+  data: AIDrinkResult;
+  imageUrl: string;
+  glass: GlassType;
+  color: string;
+}
+
+export interface MissionRequirement {
+  type: 'ingredient' | 'flavor' | 'alcohol_level' | 'glass';
+  target: string;
+  value?: number | string;
+}
+
+export interface DailyMission {
+  id: string;
+  date: string;
+  npcName: string;
+  npcAvatar: string;
+  requestDescription: string;
+  requirements: MissionRequirement[];
+  reward: string;
+  isCompleted: boolean;
 }

@@ -7,8 +7,14 @@ import Workbench from './components/Workbench';
 import Timeline from './components/Timeline';
 import DrinkResult from './components/DrinkResult';
 import GlassSimOverlay from './components/GlassSimOverlay';
-import { analyzeCustomDrink, generateDrinkImage, generateDrinkRecipe, setApiKey } from './services/geminiService';
-import { ChevronLeft, Key, Settings, X, Beaker, Package } from 'lucide-react';
+import RecipeGallery from './components/RecipeGallery';
+import DailyMissionModal from './components/DailyMissionModal';
+import { storageService } from './services/storageService';
+import { missionService } from './services/missionService';
+import { analyzeCustomDrink, generateDrinkImage, evaluateMissionSuccess, generateDrinkRecipe, setApiKey } from './services/geminiService';
+import { audioService } from './services/audioService';
+import { ChevronLeft, Key, Settings, X, Beaker, Package, Library, Target } from 'lucide-react';
+import { DailyMission } from './types';
 
 type MobileTab = 'simulator' | 'workbench';
 
@@ -41,6 +47,10 @@ function App() {
   const [apiKeyInput, setApiKeyInput] = useState(localStorage.getItem('GEMINI_API_KEY') || '');
   const [isKeySaved, setIsKeySaved] = useState(!!localStorage.getItem('GEMINI_API_KEY'));
   const [showSettings, setShowSettings] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+  const [showMission, setShowMission] = useState(false);
+  const [currentMission, setCurrentMission] = useState<DailyMission | null>(null);
+  const [missionResult, setMissionResult] = useState<{ success: boolean, reason: string } | null>(null);
 
   // Mobile Tab State
   const [mobileTab, setMobileTab] = useState<MobileTab>('workbench');
@@ -77,6 +87,13 @@ function App() {
     }
   }, []);
 
+  // Initialize Daily Mission
+  React.useEffect(() => {
+    if (isKeySaved) {
+      setCurrentMission(missionService.getDailyMission());
+    }
+  }, [isKeySaved]);
+
   const saveApiKey = (key: string) => {
     localStorage.setItem('GEMINI_API_KEY', key);
     setApiKey(key);
@@ -97,6 +114,7 @@ function App() {
       garnish: []
     });
     setResultData(null);
+    setMissionResult(null);
     setCurrentAction(null);
     setIsAIPlaying(false);
     setIsAIGenerated(false);
@@ -137,6 +155,7 @@ function App() {
 
       switch (action) {
         case ActionType.POUR:
+          audioService.playPour();
           if (payload.ingredient) {
             newStep.ingredientId = payload.ingredient.id;
             newVolume += payload.amount;
@@ -158,10 +177,20 @@ function App() {
             }
           }
           break;
-        case ActionType.ADD_ICE: newIce = true; break;
-        case ActionType.STIR: newIsMixed = true; break;
-        case ActionType.SHAKE: newIsMixed = true; break;
+        case ActionType.ADD_ICE:
+          audioService.playIce();
+          newIce = true;
+          break;
+        case ActionType.STIR:
+          audioService.playStir();
+          newIsMixed = true;
+          break;
+        case ActionType.SHAKE:
+          audioService.playShake();
+          newIsMixed = true;
+          break;
         case ActionType.GARNISH:
+          audioService.playIce(); // Re-use clink for garnish
           if (payload.ingredient) newGarnish.push(payload.ingredient.id);
           break;
       }
@@ -253,12 +282,15 @@ function App() {
       setIsAIPlaying(false);
       setIsAIGenerated(true);
 
+      const stats = calculateStats();
+      const enrichedRecipe = { ...recipe, ...stats, userPrompt: prompt };
+
       // Set initial result without image
-      setResultData({ data: recipe, img: '' });
+      setResultData({ data: enrichedRecipe, img: '' });
 
       // 4. Generate Final Image in background
       const imgUrl = await generateDrinkImage(recipe.visualPrompt);
-      setResultData({ data: recipe, img: imgUrl });
+      setResultData({ data: enrichedRecipe, img: imgUrl });
 
     } catch (e) {
       console.error(e);
@@ -317,47 +349,106 @@ function App() {
 
     // Play Ingredients
     // --- Atomic Playback Sequence ---
-    // We now strictly iterate through instructions and treat each as a system action
     for (const instruction of recipe.instructions) {
       const instructionLower = instruction.toLowerCase();
-      let action: ActionType | null = null;
-      let payload: any = {};
+      let hasExecuted = false;
 
-      // 1. Check for Ingredient Pouring
-      // We look for any ingredient from the list that is mentioned in this specific instruction
-      const ingMatch = recipe.ingredients.find(ing =>
-        instruction.includes(ing.name.split('(')[0]) ||
-        instruction.includes(ing.name.split('（')[0])
-      );
+      // 1. Multiple Ingredient Pouring Detection
+      // We look for ALL ingredients from the list that might be mentioned in this sentence
+      for (const ingMatch of recipe.ingredients) {
+        const baseName = ingMatch.name.split('(')[0].split('（')[0];
 
-      if (ingMatch) {
-        action = ActionType.POUR;
-        const localIng = findIngredient(ingMatch.name);
-        let amount = parseInt(ingMatch.amount) || (parseInt(instruction.match(/\d+/)?.[0] || '30'));
-        payload = { ingredient: localIng, amount };
+        // Advanced fuzzy check:
+        // 1. Exact match (rare with AI variations)
+        // 2. Instruction contains base name (e.g., "倒入茉莉花浸泡二锅头")
+        // 3. Base name contains significant words from instruction (e.g., "山楂糖浆" matches "自制山楂糖浆")
+        // 4. Overlap of significant characters
+        const isMatch = instruction.includes(baseName) ||
+          baseName.includes(instruction.replace(/加入|倒入|在.*中|、|和|。/g, '').trim()) ||
+          (baseName.length > 2 && instruction.includes(baseName.replace(/自制|新鲜|手工/g, '').trim())) ||
+          // Final fallback for partial naming like "山楂糖浆" vs "自制山楂糖浆"
+          (baseName.length > 2 && baseName.split('').some((_, i) => i < baseName.length - 2 && instruction.includes(baseName.substring(i, i + 3))));
+
+        if (isMatch) {
+          const localIng = findIngredient(ingMatch.name);
+          let amount = parseInt(ingMatch.amount) || (parseInt(instruction.match(/\d+/)?.[0] || '30'));
+          // Use undefined for customDescription here so handleAction generates a specific one
+          handleAction(ActionType.POUR, { ingredient: localIng, amount });
+          hasExecuted = true;
+          await new Promise(r => setTimeout(r, 600)); // Short gap between multiple pours
+        }
       }
-      // 2. Check for Techniques
-      else if (instructionLower.includes('shake') || instructionLower.includes('摇')) {
-        action = ActionType.SHAKE;
+
+      // 2. Techniques Detection (Keywords based)
+      let techAction: ActionType | null = null;
+      let techPayload: any = {};
+
+      // Refined Shake detection: must contain shake keywords BUT not just "shaker" (摇酒壶)
+      const isShakeAction = instructionLower.includes('shake') || instructionLower.includes('震') ||
+        (instructionLower.includes('摇') && !instructionLower.includes('摇酒壶'));
+
+      if (isShakeAction) {
+        techAction = ActionType.SHAKE;
       } else if (instructionLower.includes('stir') || instructionLower.includes('搅')) {
-        action = ActionType.STIR;
+        techAction = ActionType.STIR;
       } else if (instructionLower.includes('ice') || instructionLower.includes('冰')) {
-        action = ActionType.ADD_ICE;
-      } else if (instructionLower.includes('garnish') || instructionLower.includes('装饰')) {
-        action = ActionType.GARNISH;
-        // Try to handle special garnish names if mentioned
-        const garnishIng = recipe.ingredients.find(ing => instruction.includes(ing.name));
-        payload.ingredient = garnishIng ? findIngredient(garnishIng.name) : { name: instruction, id: 'garnish' };
+        techAction = ActionType.ADD_ICE;
+      } else if (instructionLower.includes('garnish') || instructionLower.includes('装饰') || instructionLower.includes('点缀') || instructionLower.includes('放入')) {
+        // Only trigger garnish if it's not already handled by a POUR matching above
+        if (instructionLower.includes('点缀') || instructionLower.includes('装饰') || instructionLower.includes('garnish')) {
+          techAction = ActionType.GARNISH;
+          const garnishIng = recipe.ingredients.find(ing => instruction.includes(ing.name.split('(')[0]));
+          techPayload.ingredient = garnishIng ? findIngredient(garnishIng.name) : { name: instruction, id: 'garnish' };
+        }
       }
 
-      // 3. Execute Action if recognized
-      if (action) {
-        handleAction(action, payload, instruction);
-        await new Promise(r => setTimeout(r, stepDelay + 200));
+      if (techAction) {
+        // Only pass customDescription if it's NOT a complex sentence, otherwise let it use the default tech name
+        const isComplex = instruction.length > 15;
+        handleAction(techAction, techPayload, isComplex ? undefined : instruction);
+        hasExecuted = true;
+      }
+
+      // 3. Fallback: if nothing matched but sentence has "加入" or "倒入", try to find any volume-like nouns
+      if (!hasExecuted && (instruction.includes('加') || instruction.includes('倒'))) {
+        // If we missed ingredients because of name mismatch but volume is there
+        const volMatch = instruction.match(/(\d+)\s*(ml|毫升|克)/i);
+        if (volMatch) {
+          handleAction(ActionType.POUR, {
+            ingredient: findIngredient(instruction.substring(0, 10)),
+            amount: parseInt(volMatch[1])
+          }, instruction);
+          hasExecuted = true;
+        }
+      }
+
+      if (hasExecuted) {
+        await new Promise(r => setTimeout(r, stepDelay));
       }
     }
 
     await new Promise(r => setTimeout(r, 1000));
+  };
+
+  const calculateStats = () => {
+    let totalVol = 0;
+    let totalAbv = 0;
+    let totalDensity = 0;
+
+    drinkState.layers.forEach(layer => {
+      const ing = INVENTORY.find(i => i.id === layer.ingredientId);
+      if (ing) {
+        totalVol += layer.amount;
+        totalAbv += (ing.abv * layer.amount);
+        totalDensity += (ing.density * layer.amount);
+      }
+    });
+
+    return {
+      abv: totalVol > 0 ? Number((totalAbv / totalVol).toFixed(1)) : 0,
+      density: totalVol > 0 ? Number((totalDensity / totalVol).toFixed(3)) : 1.000,
+      temp: drinkState.ice ? '4.2°C' : (drinkState.steps.some(s => s.type === ActionType.SHAKE) ? '6.5°C' : '18.2°C')
+    };
   };
 
   // --- Manual Finish Workflow ---
@@ -366,11 +457,25 @@ function App() {
     try {
       const ingredientsList = drinkState.layers.map(l => ({ name: l.name, amount: `${l.amount} ml` }));
       const stepsList = drinkState.steps.map(s => s.description);
+      const glassType = drinkState.glass;
 
-      const analysis = await analyzeCustomDrink(ingredientsList, stepsList);
+      const analysis = await analyzeCustomDrink(ingredientsList, stepsList, glassType);
       const imageUrl = await generateDrinkImage(analysis.visualPrompt);
 
-      setResultData({ data: analysis, img: imageUrl });
+      // 3. Mission Evaluation
+      if (currentMission && !currentMission.isCompleted) {
+        const evaluation = await evaluateMissionSuccess(analysis, currentMission.requirements);
+        setMissionResult(evaluation);
+        if (evaluation.success) {
+          missionService.completeMission();
+          setCurrentMission(missionService.getDailyMission()); // Refresh state
+        }
+      }
+
+      const stats = calculateStats();
+      const enrichedAnalysis = { ...analysis, ...stats };
+
+      setResultData({ data: enrichedAnalysis, img: imageUrl });
       setMode(AppMode.RESULT);
     } catch (e) {
       console.error(e);
@@ -489,6 +594,23 @@ function App() {
               >
                 <Settings size={18} />
               </button>
+              <button
+                onClick={() => setShowGallery(true)}
+                className="p-2 border-2 border-slate-800 hover:border-brand-gold transition-colors text-slate-500 hover:text-brand-gold flex items-center gap-2"
+              >
+                <Library size={18} />
+                <span className="hidden lg:inline text-[10px] font-pixel">ARCHIVE</span>
+              </button>
+              <button
+                onClick={() => setShowMission(true)}
+                className={`p-2 border-2 transition-colors flex items-center gap-2 ${currentMission?.isCompleted
+                  ? 'border-green-800 text-green-600 hover:border-green-500 hover:text-green-500'
+                  : 'border-slate-800 text-slate-500 hover:border-brand-gold hover:text-brand-gold'
+                  }`}
+              >
+                <Target size={18} />
+                <span className="hidden lg:inline text-[10px] font-pixel">DAILY_MISSION</span>
+              </button>
             </div>
           </header>
 
@@ -501,10 +623,10 @@ function App() {
               {mobileTab === 'simulator' && (
                 <div className="flex-1 flex flex-col relative bg-slate-900 overflow-hidden shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]">
                   <GlassSimOverlay />
-                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden z-10">
+                  <div className="flex-1 flex items-center justify-center overflow-hidden z-10 relative">
                     <GlassSimulator drinkState={drinkState} currentAction={currentAction} currentIngredient={currentIngredient} />
                   </div>
-                  <div className="absolute bottom-[60px] left-0 right-0 z-20">
+                  <div className="shrink-0 z-20 mb-[60px]">
                     <Timeline steps={drinkState.steps} />
                   </div>
                 </div>
@@ -534,10 +656,10 @@ function App() {
               {/* Simulator Area */}
               <div className="flex-1 flex flex-col relative h-full bg-slate-900 border-r-4 border-black overflow-hidden shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]">
                 <GlassSimOverlay />
-                <div className="absolute inset-0 flex items-center justify-center overflow-hidden z-10">
+                <div className="flex-1 flex items-center justify-center overflow-hidden z-10 relative">
                   <GlassSimulator drinkState={drinkState} currentAction={currentAction} currentIngredient={currentIngredient} />
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 z-20">
+                <div className="shrink-0 z-20">
                   <Timeline steps={drinkState.steps} />
                 </div>
               </div>
@@ -582,6 +704,13 @@ function App() {
                   <Package size={22} />
                   <span className="text-[10px] font-pixel uppercase">材料库</span>
                 </button>
+                <button
+                  onClick={() => setShowGallery(true)}
+                  className="flex-1 flex flex-col items-center gap-1 py-3 px-2 transition-all text-slate-500 hover:text-slate-300"
+                >
+                  <Library size={22} />
+                  <span className="text-[10px] font-pixel uppercase">存档</span>
+                </button>
               </div>
             </nav>
           </main>
@@ -594,10 +723,22 @@ function App() {
             <DrinkResult
               result={resultData.data}
               imageUrl={resultData.img}
+              glass={drinkState.glass}
+              color={drinkState.mixedColor}
+              missionResult={missionResult}
               onReset={() => { setMode(AppMode.DIY); resetDrink(); }}
             />
           </div>
         </div>
+      )}
+
+      {showGallery && <RecipeGallery onClose={() => setShowGallery(false)} />}
+      {showMission && currentMission && (
+        <DailyMissionModal
+          mission={currentMission}
+          onClose={() => setShowMission(false)}
+          onStart={() => setShowMission(false)}
+        />
       )}
     </div>
   );

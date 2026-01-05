@@ -8,7 +8,7 @@ interface TimelineProps {
 
 const Timeline: React.FC<TimelineProps> = ({ steps }) => {
   return (
-    <div className="w-full bg-black/80 backdrop-blur-sm border-t-4 border-black p-3 relative scanlines overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar">
+    <div className="w-full bg-black/80 backdrop-blur-sm border-t-4 border-black p-2 relative scanlines overflow-hidden max-h-[160px] overflow-y-auto custom-scrollbar">
       <div className="flex items-center gap-2 mb-3 p-1 bg-slate-900 border-b-2 border-slate-800 sticky top-0 z-20">
         <div className="w-2 h-2 bg-red-600 animate-pulse"></div>
         <span className="text-[12px] font-pixel text-slate-500 uppercase tracking-widest">LOG_CONSOLE_V1.12</span>

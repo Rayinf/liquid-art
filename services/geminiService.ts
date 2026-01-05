@@ -91,7 +91,8 @@ const validateRecipe = (data: any): AIDrinkResult => {
       spicy: Number(flavor.spicy) ?? 0,
       boozy: Number(flavor.boozy) ?? 5,
       salty: Number(flavor.salty) ?? 0,
-    }
+    },
+    lore: data.lore || data.backstory || data.story || "关于这杯酒的传说，还有待你去书写。"
   };
   return result;
 };
@@ -108,15 +109,12 @@ export const generateDrinkRecipe = async (prompt: string, preferences: string): 
   2. 名字 (name)：创意中文名。
   3. 描述 (description)：30-50字的诗意中文描述。
   4. 原料 (ingredients)：仅包含最终成品中包含的液体原料列表。
-  5. 步骤 (instructions)：**极其重要**：必须将制作过程分解为“原子化”的单一动作数组。
-     - 严禁在一个字符串中包含多个动作或多种材料。
-     - 如果是倒入多种材料，请拆分为多个独立的 "倒入 [材料名] [用量]" 步骤。
-     - 单独描述技术动作（如“加入冰块”、“摇晃15秒”、“搅拌”、“装饰”等）。
-     - 每个步骤字符串应简洁、直接、符合系统操作逻辑。
+  5. 步骤 (instructions)：必须拆分为原子化动作。
   6. 视觉提示词 (visualPrompt)：英文描述这杯酒的样子。
   7. 风味数据 (flavorProfile)：0-10数值。
+  8. 调酒师故事 (lore)：撰写一段80-120字的中文背景故事。这杯酒背后代表了什么？是在哪个雨夜诞生的？它属于谁？文字要优雅、有画面感、富有哲理。
   
-  注意：即便用户请求模糊，你也必须生成完整的、原子化的步骤数据，严禁合并步骤。`;
+  注意：即便用户请求模糊，你也必须生成完整的、包含故事的数据。`;
 
   const fullPrompt = `用户请求: "${prompt}".\n偏好设置: ${preferences}.`;
 
@@ -157,9 +155,10 @@ export const generateDrinkRecipe = async (prompt: string, preferences: string): 
               salty: { type: Type.NUMBER }
             },
             required: ["sweet", "sour", "bitter", "spicy", "boozy", "salty"]
-          }
+          },
+          lore: { type: Type.STRING }
         },
-        required: ["name", "description", "ingredients", "instructions", "visualPrompt", "flavorProfile"]
+        required: ["name", "description", "ingredients", "instructions", "visualPrompt", "flavorProfile", "lore"]
       }
     }
   });
@@ -172,18 +171,21 @@ export const generateDrinkRecipe = async (prompt: string, preferences: string): 
 };
 
 // --- DIY Analyzer (Recipe to Story/Image) ---
-export const analyzeCustomDrink = async (ingredients: { name: string, amount: string }[], steps: string[]): Promise<AIDrinkResult> => {
+export const analyzeCustomDrink = async (ingredients: { name: string, amount: string }[], steps: string[], glassType: string): Promise<AIDrinkResult> => {
   const model = "gemini-3-flash-preview";
 
-  const systemInstruction = `你是一位专业的鸡尾酒品鉴师。用户刚刚在模拟器中手动制作了一杯酒。
-  请根据提供的原料列表和制作步骤，分析这杯酒的风味。
+  const systemInstruction = `你是一位拥有诗人灵魂的毒舌酒评家。以犀利、优雅、带有黑色幽默的风格著称。
+  请根据原料、步骤和杯型(${glassType})，给出**兼具文学性与客观性**的评价。
 
   任务：
-  1. 为这杯酒起一个好听的中文名字(name)。
-  2. 写一段简短的中文品鉴描述(description)（30字左右）。
-  3. 估算这杯酒的风味数据(flavorProfile)（0 - 10）。
-  4. 生成一段英文的 Visual Prompt(visualPrompt)，用于生成这杯酒的写实照片。
+  1. 中文名字(name)：起一个极具意境的名字。
+  2. 品尝描述(description)：**拒绝平庸的赞美**。用华丽辞藻包裹犀利的真相。字数在150字左右。如果酒很难喝，请用优美的诗句来形容这种灾难（例如“像是在拥抱腐烂的玫瑰”）；如果很好喝，请用深邃的隐喻来赞叹。
+  3. 风味数据(flavorProfile)：客观打分（0-10）。
+  4. Visual Prompt：英文，明确包含杯型特征，且描述应侧重于中心化的正方形构图(1:1 aspect ratio)。
+  5. 调酒师故事(lore)：撰写一段80-120字的微小说。基调应是**冷峻、深沉、甚至略带颓废**的。脑补这杯酒属于哪个失意的人，或是哪个荒诞的夜晚。
   
+  **重要：在 instructions 中描述步骤时，必须使用与 ingredients 列表中完全一致的名称，不要使用代词或变体。**
+
   输出必须是完整的 JSON 格式，包含以上所有字段。`;
 
   const inputData = JSON.stringify({ ingredients, steps });
@@ -213,9 +215,10 @@ export const analyzeCustomDrink = async (ingredients: { name: string, amount: st
             },
             required: ["sweet", "sour", "bitter", "spicy", "boozy", "salty"]
           },
-          visualPrompt: { type: Type.STRING }
+          visualPrompt: { type: Type.STRING },
+          lore: { type: Type.STRING }
         },
-        required: ["name", "description", "visualPrompt", "flavorProfile"]
+        required: ["name", "description", "visualPrompt", "flavorProfile", "lore"]
       }
     }
   });
@@ -242,7 +245,7 @@ export const generateDrinkImage = async (visualPrompt: string): Promise<string> 
     const response = await getAI().models.generateContent({
       model: model,
       contents: {
-        parts: [{ text: visualPrompt }]
+        parts: [{ text: `${visualPrompt}, 1:1 aspect ratio, centered square composition, high quality pixel art` }]
       }
     });
 
@@ -259,3 +262,40 @@ export const generateDrinkImage = async (visualPrompt: string): Promise<string> 
     return "";
   }
 }
+
+// --- Mission Evaluation ---
+export const evaluateMissionSuccess = async (recipe: AIDrinkResult, requirements: any[]): Promise<{ success: boolean, reason: string }> => {
+  const model = "gemini-3-flash-preview";
+
+  const systemInstruction = `你是一位严格的调酒比赛裁判。
+  你需要判断用户制作的这杯酒是否满足所有给定的任务要求。
+  
+  输出必须是 JSON 格式：
+  {
+    "success": boolean,
+    "reason": "一段简短的评价，如果失败请说明哪个要求没达到"
+  }`;
+
+  const inputData = JSON.stringify({ recipe, requirements });
+  const fullPrompt = `请判断这杯酒是否满足任务要求: \n${inputData}`;
+
+  try {
+    const response = await getAI().models.generateContent({
+      model,
+      contents: fullPrompt,
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+      }
+    });
+
+    const result = safeParseJSON(response.text || '{}');
+    return {
+      success: !!result.success,
+      reason: result.reason || "评价已生成"
+    };
+  } catch (e) {
+    console.error("Mission evaluation failed", e);
+    return { success: false, reason: "系统暂时无法判定" };
+  }
+};

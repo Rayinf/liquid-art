@@ -104,46 +104,46 @@ const GlassSimulator: React.FC<GlassSimulatorProps> = ({ drinkState, currentActi
     switch (glass) {
       case GlassType.MARTINI:
         return {
-          path: "M 20 10 L 100 130 L 180 10",
+          path: "M 20 10 L 28 10 L 28 18 L 36 18 L 36 26 L 44 26 L 44 34 L 52 34 L 52 42 L 60 42 L 60 50 L 68 50 L 68 58 L 76 58 L 76 66 L 84 66 L 84 74 L 92 74 L 92 82 L 100 82 L 108 82 L 108 74 L 116 74 L 116 66 L 124 66 L 124 58 L 132 58 L 132 50 L 140 50 L 140 42 L 148 42 L 148 34 L 156 34 L 156 26 L 164 26 L 164 18 L 172 18 L 172 10 L 180 10 Z",
           width: commonWidth,
           height: commonHeight,
           maskId: "mask-martini",
-          liquidBottomY: 130,
-          liquidTopY: 20,
+          liquidBottomY: 82,
+          liquidTopY: 10,
           rimY: 10,
           stem: true,
         };
       case GlassType.COUPE:
         return {
-          path: "M 20 20 L 20 60 L 40 80 L 160 80 L 180 60 L 180 20", // Blocky bowl
+          path: "M 20 20 L 20 60 L 30 60 L 30 70 L 50 70 L 50 80 L 150 80 L 150 70 L 170 70 L 170 60 L 180 60 L 180 20 Z",
           width: commonWidth,
           height: commonHeight,
           maskId: "mask-coupe",
           liquidBottomY: 80,
-          liquidTopY: 25,
+          liquidTopY: 20,
           rimY: 20,
           stem: true,
         };
       case GlassType.HIGHBALL:
         return {
-          path: "M 45 10 L 45 200 L 55 210 L 145 210 L 155 200 L 155 10", // Blocky Tall
+          path: "M 45 10 L 45 200 L 55 200 L 55 210 L 145 210 L 145 200 L 155 200 L 155 10 Z",
           width: commonWidth,
           height: commonHeight,
           maskId: "mask-highball",
           liquidBottomY: 210,
-          liquidTopY: 20,
+          liquidTopY: 10,
           rimY: 10,
           stem: false,
         };
       case GlassType.ROCKS:
       default:
         return {
-          path: "M 30 10 L 45 190 L 55 200 L 145 200 L 155 190 L 170 10", // Blocky Short
+          path: "M 40 10 L 40 190 L 50 190 L 50 200 L 150 200 L 150 190 L 160 190 L 160 10 Z",
           width: commonWidth,
           height: commonHeight,
           maskId: "mask-rocks",
           liquidBottomY: 200,
-          liquidTopY: 40,
+          liquidTopY: 20,
           rimY: 10,
           stem: false,
         };
@@ -225,50 +225,93 @@ const GlassSimulator: React.FC<GlassSimulatorProps> = ({ drinkState, currentActi
 
     if (g.includes('lemon') || g.includes('lime') || g.includes('orange')) {
       const color = g.includes('lime') ? '#32CD32' : (g.includes('orange') ? 'orange' : '#FFD700');
-      // Pixelated Citrus Wheel
+      // Pixel-perfect Citrus Wheel (blocky)
       content = (
         <g transform="rotate(15)">
-          <rect x="-20" y="-20" width="40" height="40" fill={color} stroke="white" strokeWidth="2" />
-          <rect x="-10" y="-10" width="20" height="20" fill="white" opacity="0.3" />
+          <rect x="-16" y="-16" width="32" height="32" fill={color} />
+          <rect x="-18" y="-18" width="36" height="36" fill="none" stroke="white" strokeWidth="4" />
+          <rect x="-8" y="-8" width="8" height="8" fill="white" opacity="0.4" />
+          <rect x="0" y="0" width="8" height="8" fill="white" opacity="0.4" />
         </g>
       );
       if (g.includes('Twist')) {
-        content = <path d="M 0 0 L 10 -10 L 20 0 L 10 10 Z" fill={color} stroke="white" strokeWidth="2" />;
+        content = (
+          <g>
+            <rect x="0" y="0" width="12" height="4" fill={color} />
+            <rect x="8" y="4" width="12" height="4" fill={color} />
+            <rect x="16" y="8" width="12" height="4" fill={color} />
+          </g>
+        );
       }
     } else if (g.includes('pineapple')) {
-      content = <path d="M 0 0 L 20 -30 L 40 0 Z" fill="#FFD700" stroke="#DAA520" strokeWidth="2" />;
+      content = (
+        <g>
+          <rect x="0" y="0" width="20" height="20" fill="#FFD700" />
+          <rect x="5" y="-10" width="10" height="10" fill="#228B22" />
+        </g>
+      );
     } else if (g.includes('cherry')) {
       content = (
         <g>
-          <rect x="-6" y="-6" width="12" height="12" fill="#8B0000" stroke="black" strokeWidth="1" />
-          <path d="M 0 -6 L 0 -15 L 10 -15" stroke="#3e2723" strokeWidth="2" fill="none" />
+          <rect x="-8" y="-8" width="16" height="16" fill="#8B0000" />
+          <rect x="0" y="-16" width="4" height="12" fill="#3e2723" />
+          <rect x="0" y="-20" width="10" height="4" fill="#3e2723" />
+          <rect x="-4" y="-4" width="4" height="4" fill="white" opacity="0.3" />
         </g>
       );
     } else if (g.includes('olive')) {
       content = (
         <g>
-          <rect x="-8" y="-6" width="16" height="12" fill="#556B2F" stroke="black" strokeWidth="1" />
+          <rect x="-10" y="-8" width="20" height="16" fill="#556B2F" />
           <rect x="-2" y="-2" width="4" height="4" fill="red" />
-          {glass === GlassType.MARTINI && <line x1="0" y1="0" x2="40" y2="-30" stroke="#A9A9A9" strokeWidth="2" />}
+          {glass === GlassType.MARTINI && <rect x="-2" y="-40" width="4" height="60" fill="#A9A9A9" />}
         </g>
       );
     } else if (g.includes('mint') || g.includes('rosemary') || g.includes('celery')) {
       const color = g.includes('mint') ? '#228B22' : (g.includes('celery') ? '#90EE90' : '#556B2F');
-      content = <rect x="-5" y="-20" width="10" height="30" fill={color} stroke="white" strokeWidth="2" transform="rotate(-10)" />;
+      content = (
+        <g>
+          <rect x="-4" y="-24" width="8" height="32" fill={color} />
+          <rect x="-8" y="-16" width="16" height="4" fill={color} />
+          <rect x="-8" y="-8" width="16" height="4" fill={color} />
+        </g>
+      );
     } else if (g.includes('cucumber')) {
-      content = <rect x="-12" y="-4" width="24" height="8" fill="#90EE90" stroke="#228B22" strokeWidth="2" transform="rotate(10)" />;
+      content = (
+        <g>
+          <rect x="-12" y="-6" width="24" height="12" fill="#90EE90" stroke="#228B22" strokeWidth="3" />
+          <rect x="-4" y="-2" width="8" height="4" fill="white" opacity="0.2" />
+        </g>
+      );
     } else if (g.includes('raspberry')) {
-      content = <rect x="-6" y="-6" width="12" height="12" fill="#DC143C" stroke="#8B0000" strokeWidth="2" />;
+      content = <rect x="-8" y="-8" width="16" height="16" fill="#DC143C" stroke="#8B0000" strokeWidth="4" />;
     } else if (g.includes('cinnamon')) {
-      content = <rect x="-2" y="-20" width="4" height="40" fill="#8B4513" transform="rotate(30)" />;
+      content = <rect x="-3" y="-24" width="6" height="48" fill="#8B4513" transform="rotate(30)" />;
     }
 
-    // If rim garnish, we translate to the Right Rim usually
-    const finalX = type === 'rim' ? (config.width / 2 + (glass === GlassType.MARTINI ? 80 : 70)) : 100 + xOffset;
-    const finalY = yPos;
+    // Calculation for stacking
+    // We count how many garnishes of the SAME type (rim or float) appeared BEFORE this one
+    // to determine its offset.
+    const prevCount = garnish.slice(0, index).filter(prevG =>
+      type === 'rim' ? isRimGarnish(prevG) : !isRimGarnish(prevG)
+    ).length;
+
+    // Offsetting
+    const stackOffsetX = type === 'rim' ? prevCount * 12 : prevCount * 10;
+    const stackOffsetY = type === 'rim' ? prevCount * -5 : prevCount * -8;
+
+    // Base Position
+    const baseX = type === 'rim'
+      ? (config.width / 2 + (glass === GlassType.MARTINI ? 70 : 60))
+      : (config.width / 2 - 10 + (index % 2 === 0 ? 5 : -5)); // Centerish float
+
+    const finalX = baseX + stackOffsetX;
+    const finalY = yPos + stackOffsetY;
+
+    // Z-Index Hack: Later garnishes are rendered last (on top), which is correct for SVG.
 
     return (
-      <g key={`${g}-${index}`} transform={`translate(${finalX}, ${finalY})`} className={animationClass} style={{ animationDelay: `${index * 0.2}s` }}>
+      <g key={`${g}-${index}`} transform={`translate(${finalX}, ${finalY})`} className={animationClass} style={{ animationDelay: `${index * 0.1}s` }}>
         {content}
       </g>
     );
@@ -287,20 +330,15 @@ const GlassSimulator: React.FC<GlassSimulatorProps> = ({ drinkState, currentActi
               <path d={config.path} />
             </clipPath>
 
-            <linearGradient id="glassShine" x1="0%" y1="0%" x2="100%" y2="10%">
-              <stop offset="0%" stopColor="white" stopOpacity="0.1" />
-              <stop offset="100%" stopColor="white" stopOpacity="0.4" />
-            </linearGradient>
+            <pattern id="dither-pattern" width="8" height="8" patternUnits="userSpaceOnUse">
+              <rect width="4" height="4" fill="white" fillOpacity="0.1" />
+              <rect x="4" y="4" width="4" height="4" fill="white" fillOpacity="0.1" />
+            </pattern>
 
-            <linearGradient id="liquidDepth" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="black" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="black" stopOpacity="0.2" />
-            </linearGradient>
-
-            <linearGradient id="pourGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={pourColor} stopOpacity="0.7" />
-              <stop offset="100%" stopColor={pourColor} stopOpacity="1" />
-            </linearGradient>
+            <pattern id="bubble-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+              <rect x="2" y="2" width="4" height="4" fill="white" opacity="0.4" />
+              <rect x="12" y="10" width="2" height="2" fill="white" opacity="0.2" />
+            </pattern>
           </defs>
 
           {/* --- STEM & BASE --- */}
@@ -316,64 +354,36 @@ const GlassSimulator: React.FC<GlassSimulatorProps> = ({ drinkState, currentActi
             {/* 1. The Liquid Stack */}
             <g>{renderLayers()}</g>
 
-            {/* 2. Liquid Side Shadows */}
-            <rect x="0" y="0" width="200" height="240" fill="url(#liquidDepth)" pointerEvents="none" />
+            {/* 2. Dither Overlay for depth */}
+            <rect x="0" y="0" width="200" height="240" fill="url(#dither-pattern)" pointerEvents="none" />
 
-            {/* 3. Surface Tension */}
+            {/* 3. Surface Steps */}
             {currentVolume > 0 && (
-              <line
-                x1="0" y1={surfaceY} x2="200" y2={surfaceY}
-                stroke="rgba(255,255,255,0.6)"
-                strokeWidth="2"
-              />
+              <rect x="0" y={surfaceY} width="200" height="4" fill="white" opacity="0.3" />
             )}
 
-            {/* 4. Bubbles */}
+            {/* 4. Bubbles (Pixelated) */}
             {layers.some(l => ['tonic', 'soda', 'champagne', 'ginger_beer', 'cola'].includes(l.ingredientId)) && (
-              <g className="mix-blend-overlay">
-                {[...Array(8)].map((_, i) => (
-                  <rect
-                    key={i}
-                    width={4} height={4}
-                    fill="white"
-                    opacity="0.6"
-                    className="animate-rise"
-                    style={{
-                      x: 40 + Math.random() * 120,
-                      y: config.liquidBottomY,
-                      animationDuration: `${1.5 + Math.random() * 2}s`,
-                      animationDelay: `${Math.random() * 2}s`
-                    }}
-                  />
-                ))}
-              </g>
+              <rect x="0" y="0" width="200" height="240" fill="url(#bubble-pattern)" className="animate-pulse" />
             )}
 
-            {/* 5. Ice Cubes (Floating) */}
+            {/* 5. Ice Cubes (Pixelated) */}
             {ice && (
               <g transform={`translate(0, ${Math.min(surfaceY + 10, config.liquidBottomY - 20) - config.liquidBottomY + 40})`} className="transition-transform duration-700">
-                <rect x="85" y={config.liquidBottomY - 50} width="30" height="30" fill="url(#glassShine)" stroke="white" strokeWidth="2" strokeOpacity="0.4" className="animate-float-slow" />
-                <rect x="110" y={config.liquidBottomY - 70} width="25" height="25" fill="url(#glassShine)" stroke="white" strokeWidth="2" strokeOpacity="0.4" transform="rotate(25 122 142)" className="animate-float-slower" />
+                <rect x="80" y={config.liquidBottomY - 50} width="32" height="32" fill="white" opacity="0.1" stroke="white" strokeWidth="4" strokeOpacity="0.3" />
+                <rect x="112" y={config.liquidBottomY - 72} width="24" height="24" fill="white" opacity="0.1" stroke="white" strokeWidth="4" strokeOpacity="0.3" transform="rotate(22 124 140)" />
               </g>
             )}
 
             {/* 6. Floating Garnishes */}
             {floatGarnishes.map((g, i) => renderGarnishSVG(g, i, 'float'))}
 
-            {/* 7. Pour Splash */}
-            {isPouring && (
-              <g>
-                <rect x="85" y={surfaceY - 2} width="30" height="4" fill="white" opacity="0.4" className="animate-pulse" />
-                {[...Array(5)].map((_, i) => (
-                  <rect key={i} width={4} height={4} fill={pourColor} className="animate-splash-up" style={{ x: 100, y: surfaceY, animationDelay: `${i * 0.1}s` }} />
-                ))}
-              </g>
-            )}
+            {/* 7. Splash removed per user request */}
           </g>
 
           {/* --- GLASS SHELL --- */}
-          <path d={config.path} fill="rgba(255,255,255,0.05)" stroke="none" />
-          <path d={config.path} stroke="rgba(255,255,255,0.8)" strokeWidth="4" fill="none" />
+          <path d={config.path} fill="rgba(255,255,255,0.02)" stroke="none" />
+          <path d={config.path} stroke="white" strokeOpacity="0.8" strokeWidth="6" fill="none" strokeLinejoin="round" />
 
           {/* Rim Salt/Sugar */}
           {garnish.includes('garnish_salt') && (
@@ -399,13 +409,7 @@ const GlassSimulator: React.FC<GlassSimulatorProps> = ({ drinkState, currentActi
                   }}
                 />
               </foreignObject>
-              <path
-                d={`M 100 0 L 100 ${surfaceY}`}
-                stroke="url(#pourGradient)"
-                strokeWidth="8"
-                strokeLinecap="square"
-                className="animate-pour-stream"
-              />
+              {/* Stream removed per user request */}
             </g>
           )}
 
@@ -464,8 +468,12 @@ const GlassSimulator: React.FC<GlassSimulatorProps> = ({ drinkState, currentActi
         }
         .animate-rise { animation: rise 2s linear infinite; }
 
-        @keyframes flow { from { stroke-dashoffset: 32; } to { stroke-dashoffset: 0; } }
-        .animate-pour-stream { stroke-dasharray: 16 16; animation: flow 0.5s linear infinite; }
+        @keyframes pourStream {
+          0% { opacity: 0.8; stroke-width: 12px; }
+          50% { opacity: 1; stroke-width: 14px; }
+          100% { opacity: 0.8; stroke-width: 12px; }
+        }
+        .animate-pour-stream { animation: pourStream 0.2s steps(2, jump-none) infinite; }
 
         @keyframes splashUp {
           0% { transform: translate(0, 0); opacity: 1; }
@@ -520,7 +528,7 @@ const GlassSimulator: React.FC<GlassSimulatorProps> = ({ drinkState, currentActi
 
         .animate-shake-bubble { animation: rise 1s ease-out forwards; }
       `}</style>
-    </div>
+    </div >
   );
 };
 
